@@ -8,3 +8,4 @@ psycopg2
 sqlparse
 python-dotenv
 Pillow
+nepse-api

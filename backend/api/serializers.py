@@ -52,3 +52,5 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['first_name', 'last_name', 'email', 'username']
 
+class ChatSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=1000)

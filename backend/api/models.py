@@ -90,3 +90,4 @@ class User(AbstractBaseUser):
         if not value:
             raise ValidationError('Username cannot be blank')
 
+
