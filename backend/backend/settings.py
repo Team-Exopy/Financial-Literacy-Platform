@@ -177,14 +177,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.UserRateThrottle',
-        'rest_framework.throttling.AnonRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'user': '100/day',  # Limit each user to 100 requests per day
-        'anon': '10/day',  # Limit each anonymous user to 10 requests per day
-    }
+
 }
 
 CORS_ALLOWED_ORIGINS = [
