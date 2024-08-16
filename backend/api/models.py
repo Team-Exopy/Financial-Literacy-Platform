@@ -91,3 +91,12 @@ class User(AbstractBaseUser):
             raise ValidationError('Username cannot be blank')
 
 
+class Stock(models.Model):
+    ticker = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    trend = models.CharField(max_length=10, choices=[
+        ('UP', 'Up'),
+        ('DOWN', 'Down'),
+        ('FLAT', 'Flat')
+    ])

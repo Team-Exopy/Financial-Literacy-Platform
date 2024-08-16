@@ -6,7 +6,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/user/',include('api.urls.user_urls')),
-    path('api/',include('api.urls.bot_urls')) # ->checked
+    path('api/',include('api.urls.bot_urls')) ,
+    path('api/',include('api.urls.dummy_urls'))# ->checked
 ]
 urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT) # for development only
 # still both urlpatterns needs to understand

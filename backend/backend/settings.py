@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     # third party application
     'rest_framework',
     'corsheaders', # Including 'corsheaders' in INSTALLED_APPS and configuring it properly is essential for enabling secure cross-origin requests
-    'rest_framework_simplejwt.token_blacklist', # black_list refresh_acess_token so,it can't used any more
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 # Simple JWT
@@ -169,13 +169,7 @@ REST_FRAMEWORK = {
         # The custom JSON renderer is defined in the 'api' app.
         'api.renderers.CustomJSONRenderer',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 6,
-     'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
-        'rest_framework.filters.OrderingFilter',
-    ],
+    
     # Set the default authentication class to JWTAuthentication.
     # This authentication class uses JWT (JSON Web Tokens) for authentication.
     # JWT tokens are used for stateless authentication and provide a secure way to authenticate requests.

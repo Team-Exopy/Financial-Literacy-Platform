@@ -54,3 +54,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class ChatSerializer(serializers.Serializer):
     message = serializers.CharField(max_length=1000)
+
+class StockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        fields = ['ticker', 'name', 'price', 'trend']
