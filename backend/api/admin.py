@@ -1,7 +1,6 @@
 # Import necessary modules and models for the admin interface
 from django.contrib import admin
 from .models import *
-from api.chatbot import Conversation
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Subclass the UserAdmin class to customize the admin interface for the User model
@@ -51,9 +50,14 @@ class UserModelAdmin(BaseUserAdmin):
 
     # Define which fields to display horizontally in the admin interface
     filter_horizontal = ()
-
+class VideoAdmin(admin.ModelAdmin):
+    list_display = ('title', 'course', 'duration')
+    search_fields = ('title', 'course__title')
+    list_filter = ('course',)
 # Register the UserModelAdmin class with the User model for the admin interface
 admin.site.register(User, UserModelAdmin)
 admin.site.register(Conversation)
 admin.site.register(Stock)
+admin.site.register(Video,VideoAdmin)
+admin.site.register(Course)
 # Register other models with default admin interfaces

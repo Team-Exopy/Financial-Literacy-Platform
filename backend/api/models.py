@@ -1,95 +1,125 @@
-# Import the necessary modules for user management
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-from django.core.exceptions import ValidationError
 from django.utils import timezone
-from django.contrib.auth.models import User
-from django.db.models import Avg
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+from datetime import timedelta
 
-
-# Define a custom user manager class
+# Custom user manager
 class UserManager(BaseUserManager):
-    # Create a new user
     def create_user(self, email, first_name, last_name, username, password=None):
-        # Check if the email is provided
         if not email:
             raise ValueError('User must have an email address')
-        # Check if the username is provided
         if not username:
             raise ValueError('User must have a username')
 
-        # Create a new user instance
         user = self.model(
-            email=self.normalize_email(email),  # Normalize the email address
-            first_name=first_name,  # Set the first name
-            last_name=last_name,  # Set the last name
-            username=username,  # Set the username
-            password = password,
-            is_admin=False,  # Set the user as not an admin
+            email=self.normalize_email(email),
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
         )
-        # Set the password for the user
         user.set_password(password)
-        # Save the user to the database
         user.save(using=self._db)
-        # Return the created user
         return user
 
-    # Create a new superuser
     def create_superuser(self, email, first_name, last_name, username, password=None):
-        # Create a new user
         user = self.create_user(email, first_name, last_name, username, password)
-        # Set the user as an admin
         user.is_admin = True
-        # Save the user to the database
         user.save(using=self._db)
-        # Return the created superuser
         return user
 
-# Define the custom user model
+# Custom user model
 class User(AbstractBaseUser):
-    # Define the fields for the user model
-    first_name = models.CharField(max_length=50)  # First name of the user
-    last_name = models.CharField(max_length=50)  # Last name of the user
-    username = models.CharField(max_length=50, unique=True)  # Username of the user
-    email = models.EmailField(max_length=200, unique=True)  # Email address of the user
-    password = models.CharField(max_length=255)  # Password for the user
-    is_admin = models.BooleanField(default=False)  # Whether the user is an admin or not
-    user_created = models.DateTimeField(default=timezone.now)  # Date and time when the user was created
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    username = models.CharField(max_length=50, unique=True)
+    email = models.EmailField(max_length=200, unique=True)
+    password = models.CharField(max_length=255)
+    is_admin = models.BooleanField(default=False)
+    user_created = models.DateTimeField(default=timezone.now)
+    premium = models.BooleanField(default=False)
+    webapp_currency = models.PositiveIntegerField(default=0)  # Webapp currency field
+    points = models.PositiveIntegerField(default=0)  # Points field
 
-    # Set the custom user manager for this model
     objects = UserManager()
 
-    # Set the username field to be the email field
     USERNAME_FIELD = 'email'
-    # Set the required fields for creating a user
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
-    # Override the __str__ method to return the email of the user
     def __str__(self):
         return self.email
 
-    # Override the has_perm method to check if the user is an admin
     def has_perm(self, perm, obj=None):
-        "Does the user have a specific permission?"
         return self.is_admin
 
-    # Override the has_module_perms method to always return True
     def has_module_perms(self, app_label):
-        "Does the user have permissions to view the app 'app_label'?"
         return True
 
-    # Override the is_staff property to check if the user is an admin
     @property
     def is_staff(self):
-        "Is the user a member of staff?"
         return self.is_admin
 
-    # Validate the username to ensure it is not blank
-    def validate_username(self, value):
-        if not value:
-            raise ValidationError('Username cannot be blank')
+    def make_premium(self):
+        if self.premium:
+            raise ValidationError('User is already a premium member.')
+        self.premium = True
+        self.webapp_currency += 100000  # Add 100,000 webapp currency
+        self.save()
 
+    def redeem_currency_for_points(self):
+        if self.webapp_currency >= 100000:
+            self.points += 100  # Convert 100,000 currency to 100 points
+            self.webapp_currency -= 100000
+            self.save()
+        else:
+            raise ValidationError('Not enough webapp currency to redeem points.')
+
+    def redeem_points_for_course(self, course):
+        if course.is_premium and self.points >= course.points_required:
+            self.points -= course.points_required
+            self.save()
+            # Logic to grant course access can be added here
+            return course.videos.all()  # Return all videos associated with the course
+        else:
+            raise ValidationError('Not enough points to redeem this course.')
+
+# Course model
+class Course(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    is_premium = models.BooleanField(default=False)
+    points_required = models.PositiveIntegerField(default=0)  # Points required to redeem this course
+
+    def __str__(self):
+        return self.title
+
+# Video model
+class Video(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='videos')
+    title = models.CharField(max_length=200)
+    video_file = models.FileField(upload_to='videos/',blank=True, null=True)  # Upload video file from the device
+    duration = models.DurationField()
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.title
+
+# Conversation model
+class Conversation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
+    message = models.TextField()
+    response = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        now = timezone.now()
+        last_24_hours = now - timedelta(hours=24)
+        recent_messages_count = self.user.conversations.filter(timestamp__gte=last_24_hours).count()
+        
+        if not self.user.premium and recent_messages_count >= 4:
+            raise ValidationError('Non-premium users can only send 4 messages every 24 hours.')
+        
+        super().save(*args, **kwargs)
 
 class Stock(models.Model):
     ticker = models.CharField(max_length=10)
